@@ -1,6 +1,6 @@
 # spatial-flu-forecasting
 
-This code was used for the analyses in the paper Does Spatial Information Improve Flu Forecasting.
+This code was used for the analyses in the paper "Does Spatial Information Improve Flu Forecasting?"
 
 The file final_models.csv contains a list of models to be run with their parameters.
 
@@ -10,5 +10,10 @@ To run with 6 cores, for lines 1-4:
 Rscript model_pipeline.R "final_models.csv" 6 1 4
 
 This file will run the specified models and output the results in a CSV file with the date and time of the run, using the name of the input file.
+
+Data files:
+
+states_mat_adj.csv: contains a matrix indicating which states are neighbors
+flu_data_all.csv: contains ILI data at the state level for October 2010 - May 2019; ILI data comes from CDC ILINet, accessed via the Delphi EpiData API
 
 

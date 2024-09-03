@@ -14,6 +14,7 @@ This file will run the specified models and output the results in a CSV file wit
 Data files:
 
 states_mat_adj.csv: contains a matrix indicating which states are neighbors
+
 flu_data_all.csv: contains ILI data at the state level for October 2010 - May 2019; ILI data comes from CDC ILINet, accessed via the Delphi EpiData API
 
 

@@ -77,9 +77,11 @@ source("interval_fns.R")
 source("do_model_fit_fn.R")
 source("quantile_tracker.R")
 
-# file <- "pooled_v2.csv"
-# cores <- 6
-# start_row <- 17
+file <- "final_models.csv"
+cores <- 6
+start_row <- 1
+end_row <- 2
+
  
 newfolder <- paste0(gsub(".csv", "", file), "_", today())
  
@@ -202,7 +204,6 @@ for(i in start_row:pmin(end_row, nrow(model_input))){
   small_df$model_type <- model_type
   small_df$neg_pred <- neg_pred
   small_df$in_season <- in_season
-  small_df$gamma_t <- gamma_t
   small_df$lag_diff <- lag_diff # for doing differencing
   small_df$outcome <- outcome # ILI or ILI+
   small_df$as_of <- as_of

@@ -66,13 +66,7 @@ full_qreg <- function(data, tau, neg_pred, outcome, ar_lst){
     
     N_row <- nrow(data)
     
-    data2 <- data2 %>%
-      mutate(rn = row_number()) %>%
-      mutate(wt_n = N_row - rn - 1) %>%
-      mutate(w_i = exp(-wt_rho * wt_n)) %>%
-      dplyr::select(-c(rn,wt_n))
-
-    newcols <- colnames(data2)[-which(colnames(data2) %in% c({outcome}, "w_i"))]
+    newcols <- colnames(data2)[-which(colnames(data2) %in% c({outcome}))]
     
     newform <- reformulate(termlabels = c(sprintf("`%s`", newcols)), response = {outcome})
    

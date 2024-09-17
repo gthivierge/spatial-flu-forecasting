@@ -21,26 +21,24 @@ make_indic <- function(x, tol){
 }
 
 
-calculate_lags <- function(df, lagvar, lags, lag_diff, self, drop_cols = TRUE, indic, tol){
 
+calculate_lags <- function(df, lagvar, lags, lag_diff, self, drop_cols = TRUE, indic, tol){
+  
   new_diff <- function(x, lag){
     x1 <- rep(NA, lag)
     x2 <- diff(x, lag = lag)
-
+    
     y <- c(x1, x2)
     return(y)
   }
-
-
-
-
+  
   if(self == TRUE){
     lag_diff <- FALSE # don't do differencing for state's lagged values, only do neighbors
   }
-
+  
   if(lag_diff == TRUE){
     lags <- lags[which(lags > 0)]
-    map_lag_diff <- lags %>% map(~partial(new_diff, lag = .x))
+    map_lag_diff <- lags %>% map(~purrr::partial(new_diff, lag = .x))
     if(drop_cols == TRUE){
       df2 <- df %>%
         mutate(across(.cols = {{lagvar}}, .fns = map_lag_diff, .names = "lag_{.col}_{lags}wk")) %>%
@@ -51,18 +49,19 @@ calculate_lags <- function(df, lagvar, lags, lag_diff, self, drop_cols = TRUE, i
         mutate(across(.cols = {{lagvar}}, .fns = map_lag_diff, .names = "lag_{.col}_{lags}wk"))
     }
   } else{ # don't do differencing
-        map_lag_nodiff <- lags %>% map(~partial(dplyr::lag, n = .x))
+    map_lag_nodiff <- lags %>% purrr::map(~partial(dplyr::lag, n = .x))
     if(drop_cols == TRUE){
       df2 <- df %>%
-        mutate(across(.cols = {{lagvar}}, .fns = map_lag_nodiff, .names = "lag_{.col}_{lags}wk")) %>%
+        mutate(across({{lagvar}}, .fns = map_lag_nodiff, .names = "lag_{.col}_{lags}wk")) %>%
         dplyr::select(contains("wk"))
-
+      
     } else{
       df2 <- df %>%
         mutate(across(.cols = {{lagvar}}, .fns = map_lag_nodiff, .names = "lag_{.col}_{lags}wk"))
     }
+    # map_lag <- lags %>% map(~partial(dplyr::lag, n = .x))
   }
-
+  
   # only do the indicators if lags are already true
   # and if self is true, lags = false
   # so no indicators on own state
@@ -72,9 +71,10 @@ calculate_lags <- function(df, lagvar, lags, lag_diff, self, drop_cols = TRUE, i
       dplyr::select(!contains("0")) %>%
       mutate(across(starts_with("lag"), .fns = ~make_indic(.x, tol)))
   }
-
+  
   return(df2)
 }
+
 
 logxplusc <- function(x,c){
   return(log(x+c))
@@ -93,18 +93,8 @@ sort_quantiles <- function(out_qr){
 
 mk_long <- function(full_df, model_type){
   if(class(full_df) == "data.frame"){
-    
-    # for bootstrap, adjust format of linear regression output (shaped like quantile now)
-    
-    if(model_type == "linear" & bootstrap == FALSE){
-      long_df <- full_df %>%
-        pivot_longer(starts_with("lag"), names_to = "lag_col", values_to = "lag_value") %>%
-        pivot_longer(c("mse","se","se_df"), names_to = "error_type", values_to = "error_value") %>%
-        pivot_longer(starts_with("beta"), names_to = "beta_col", values_to = "beta_value") %>%
-        dplyr::select(-int) %>%
-        mutate(quantile = NA)   
-      
-    } else if(model_type == "quantile" | model_type == "linear"){
+  
+    if(model_type == "quantile" | model_type == "linear"){
       long_df <- full_df %>%
         pivot_longer(starts_with("lag"), names_to = "lag_col", values_to = "lag_value") %>%
         pivot_longer(c("mse","WIS"), names_to = "error_type", values_to = "error_value") %>%
@@ -196,14 +186,20 @@ make_big_df <- function(flu_data, prim_reg, lags = c(0,1,2),
 make_small_df <- function(big_df, model_type){
   if(length(names(big_df)) > 0){
     
-  if(model_type == "quantile" | model_type == "linear"){
+  if(model_type == "quantile"){
     small_df <- kit::funique(big_df[,which(names(big_df) %in% c("target_date", "prediction", "region", "epiweek", "nbrs", "model_type", "error_type", "error_value", "quantile", "WIS", "mad"))]) %>%
       filter(!is.na(region)) %>%
       filter(!is.na(prediction)) %>%
       pivot_wider(names_from = error_type, values_from = error_value) %>%
       mutate(se = NA, se_df = NA) %>%
       dplyr::select(target_date, epiweek, region, prediction, quantile, WIS, mse, mad, se, se_df, nbrs, model_type)
-  } else if(model_type == "poisson"){
+  } else if(model_type == "linear"){
+    small_df <- kit::funique(big_df[, which(names(big_df) %in% c("target_date", "prediction", "region", "epiweek", "nbrs", "model_type", "error_type", "error_value", "WIS", "mad"))]) %>%
+      filter(!is.na(region)) %>%
+      mutate(se = NA, quantile = NA, se_df = NA) %>%
+      pivot_wider(names_from = error_type, values_from = error_value) %>%
+      dplyr::select(target_date, epiweek, region, prediction, quantile, WIS, mse, mad, se, se_df, nbrs, model_type)
+   } else if(model_type == "poisson"){
     small_df <- kit::funique(big_df[,which(names(big_df) %in% c("target_date", "prediction", "region", "epiweek", "nbrs", "model_type", "error_type", "error_value", "quantile", "WIS", "mad"))]) %>%
       filter(!is.na(region)) %>%
       filter(!is.na(prediction)) %>%
